@@ -1,0 +1,38 @@
+﻿using BackendAPI.Models;
+using BackendAPI.Repositories;
+
+namespace BackendAPI.Services
+{
+    public class Magic8BallService : IMagic8BallService
+    {
+        private readonly IMagic8BallRepository _repository;
+
+        public Magic8BallService(IMagic8BallRepository repository)
+        {
+            _repository = repository;
+        }
+
+        public Magic8BallResponse Add(string response)
+        {
+            var newResponse = new Magic8BallResponse();
+            newResponse.Content = response;
+            _repository.Add(newResponse);
+            return _repository.GetLatest();
+        }
+
+        public bool Delete(int id)
+        {
+            if (_repository.GetById(id) == null)
+            {
+                return false;
+            }
+            _repository.Delete(id);
+            return true;
+        }
+
+        public List<Magic8BallResponse> Get()
+        {
+            return _repository.Get();
+        }
+    }
+}

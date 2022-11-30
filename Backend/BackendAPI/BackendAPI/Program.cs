@@ -1,4 +1,5 @@
 using BackendAPI.Repositories;
+using BackendAPI.Services;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -8,6 +9,7 @@ var connectionString = builder.Configuration["Database:ConnectionString"];
 builder.Services.AddDbContext<BotDbContext>(options => options.UseNpgsql(connectionString));
 builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddScoped<IMagic8BallRepository, Magic8BallRepository>();
+builder.Services.AddScoped<IMagic8BallService, Magic8BallService>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
 builder.Services.AddEndpointsApiExplorer();
