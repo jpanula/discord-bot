@@ -17,5 +17,10 @@ namespace BackendAPI.Repositories
         {
             return _context.Magic8BallResponses.FirstOrDefault(item => item.Id == id);
         }
+
+        public override Magic8BallResponse GetLatest()
+        {
+            return _context.Magic8BallResponses.OrderByDescending(item => item.Id).First();
+        }
     }
 }
