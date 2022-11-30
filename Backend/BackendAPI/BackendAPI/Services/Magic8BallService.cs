@@ -20,14 +20,15 @@ namespace BackendAPI.Services
             return _repository.GetLatest();
         }
 
-        public bool Delete(int id)
+        public Magic8BallResponse Delete(int id)
         {
-            if (_repository.GetById(id) == null)
+            var response = _repository.GetById(id);
+            if (response == null)
             {
-                return false;
+                return null;
             }
             _repository.Delete(id);
-            return true;
+            return response;
         }
 
         public List<Magic8BallResponse> Get()

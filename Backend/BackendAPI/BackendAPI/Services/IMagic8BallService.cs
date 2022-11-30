@@ -6,6 +6,6 @@ namespace BackendAPI.Services
     {
         public List<Magic8BallResponse> Get();
         public Magic8BallResponse Add(string response);
-        public bool Delete(int id);
+        public Magic8BallResponse Delete(int id);
     }
 }
