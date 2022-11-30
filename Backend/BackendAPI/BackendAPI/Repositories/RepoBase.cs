@@ -13,6 +13,7 @@ namespace BackendAPI.Repositories
 
         public abstract List<T> Get();
         public abstract T GetById(int id);
+        public abstract T GetLatest();
 
         public virtual void Add(T item)
         {
