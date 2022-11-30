@@ -4,7 +4,7 @@ namespace BackendAPI.Repositories
 {
     public abstract class RepoBase<T> : IRepository<T>
     {
-        protected BotDbContext _context;
+        protected readonly BotDbContext _context;
 
         public RepoBase(BotDbContext context)
         {
