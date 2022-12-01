@@ -12,10 +12,11 @@ namespace BackendAPI.Services
             _repository = repository;
         }
 
-        public Magic8BallResponse Add(string response)
+        public Magic8BallResponse Add(Magic8BallResponseData data)
         {
             var newResponse = new Magic8BallResponse();
-            newResponse.Content = response;
+            newResponse.Content = data.Content;
+            newResponse.Type = data.Type;
             _repository.Add(newResponse);
             return _repository.GetLatest();
         }

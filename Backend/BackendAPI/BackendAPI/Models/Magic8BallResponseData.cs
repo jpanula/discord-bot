@@ -1,16 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using static BackendAPI.Models.Magic8BallResponse;
+using System.ComponentModel.DataAnnotations;
 
 namespace BackendAPI.Models
 {
-    public class Magic8BallResponse
+    public class Magic8BallResponseData
     {
-        public enum AnswerType
-        {
-            Affirmative,
-            Negative,
-            Noncommittal
-        }
-        public int Id { get; set; }
         [Required]
         public string Content { get; set; }
         [Required]

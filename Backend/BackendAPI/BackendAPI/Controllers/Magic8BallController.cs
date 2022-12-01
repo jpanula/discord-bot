@@ -24,9 +24,9 @@ namespace BackendAPI.Controllers
         }
 
         [HttpPost]
-        public IActionResult Post([FromBody] string content)
+        public IActionResult Post([FromBody] Magic8BallResponseData data)
         {
-            Magic8BallResponse newResponse = _service.Add(content);
+            Magic8BallResponse newResponse = _service.Add(data);
             return Created(Request.GetEncodedUrl() + "/" + newResponse.Id, newResponse);
         }
 
