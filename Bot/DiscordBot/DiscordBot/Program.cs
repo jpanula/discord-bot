@@ -85,6 +85,7 @@ namespace DiscordBot
         private async Task InitCommands()
         {
             await _interactions.AddModuleAsync<PingModule>(_services);
+            _client.InteractionCreated += 
         }
     }
 }
