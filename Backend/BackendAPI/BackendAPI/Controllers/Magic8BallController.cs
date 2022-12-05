@@ -23,7 +23,7 @@ namespace BackendAPI.Controllers
             return Ok(_service.Get());
         }
 
-        [HttpGet("/random/weighted")]
+        [HttpGet("random/weighted")]
         public IActionResult GetRandomWeighted()
         {
             return Ok(_service.GetRandomWeighted());
