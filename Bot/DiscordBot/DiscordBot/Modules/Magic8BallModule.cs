@@ -41,7 +41,7 @@ namespace DiscordBot.Modules
             }
             else
             {
-                await RespondAsync($"{this.Context.User.Mention} asked: {question}\nAnswer: {magic8BallResponse.Content}", allowedMentions: Discord.AllowedMentions.None);
+                await RespondAsync($"{this.Context.User.Mention} asked: {question}\nAnswer: {magic8BallResponse.Content}.", allowedMentions: Discord.AllowedMentions.None);
             }
         }
     }
