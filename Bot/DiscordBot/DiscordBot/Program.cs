@@ -4,6 +4,7 @@ using Discord.Interactions;
 using Discord.Net;
 using Discord.WebSocket;
 using DiscordBot.Modules;
+using DiscordBot.Services;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Newtonsoft.Json;
@@ -12,38 +13,45 @@ namespace DiscordBot
 {
     internal class Program
     {
-        public static Task Main(string[] args) => new Program().MainAsync();
-
-        private readonly DiscordSocketClient _client;
-
-        private readonly InteractionService _interactions;
+        private readonly IConfiguration _configuration;
         private readonly IServiceProvider _services;
+
+        private readonly DiscordSocketConfig _socketConfig = new () {
+            GatewayIntents = GatewayIntents.GuildMessageReactions
+        };
+
+        private readonly InteractionServiceConfig _interactionConfig = new()
+        {
+            LogLevel = LogSeverity.Info
+        };
 
         private Program()
         {
-            _client = new DiscordSocketClient(new DiscordSocketConfig
-            {
-                LogLevel = LogSeverity.Info,
-            });
-
-            _interactions = new InteractionService(_client, new InteractionServiceConfig
-            {
-                LogLevel = LogSeverity.Info,
-            });
-
-            _client.Log += Log;
-            _interactions.Log += Log;
-
-            _services = ConfigureServices();
+            _configuration = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
+            _services = new ServiceCollection()
+                .AddSingleton(_configuration)
+                .AddSingleton(_socketConfig)
+                .AddSingleton<DiscordSocketClient>()
+                .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(), _interactionConfig))
+                .AddSingleton<InteractionHandlingService>()
+                .BuildServiceProvider();
         }
-        private static IServiceProvider ConfigureServices()
+
+        public static Task Main(string[] args) => new Program().MainAsync();
+        public async Task MainAsync()
         {
-            // Setup DI container here
-            var map = new ServiceCollection();
-            return map.BuildServiceProvider();
+            var client = _services.GetRequiredService<DiscordSocketClient>();
+            client.Log += Log;
+
+            await _services.GetRequiredService<InteractionHandlingService>().InitializeAsync();
+
+            await client.LoginAsync(TokenType.Bot, _configuration["BotToken"]);
+            await client.StartAsync();
+
+            await Task.Delay(Timeout.Infinite);
         }
 
-        private static Task Log(LogMessage message)
+        public static Task Log(LogMessage message)
         {
             switch (message.Severity)
             {
@@ -66,26 +74,6 @@ namespace DiscordBot
             Console.ResetColor();
 
             return Task.CompletedTask;
-        }
-
-        public async Task MainAsync()
-        {
-            var configuration = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
-
-            await InitCommands();
-
-            var token = configuration["BotToken"];
-
-            await _client.LoginAsync(TokenType.Bot, token);
-            await _client.StartAsync();
-
-            await Task.Delay(Timeout.Infinite);
-        }
-
-        private async Task InitCommands()
-        {
-            await _interactions.AddModuleAsync<PingModule>(_services);
-            _client.InteractionCreated += 
         }
     }
 }

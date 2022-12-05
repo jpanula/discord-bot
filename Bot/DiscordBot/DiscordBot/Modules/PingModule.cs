@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace DiscordBot.Modules
 {
-    internal class PingModule : InteractionModuleBase
+    public class PingModule : InteractionModuleBase<SocketInteractionContext>
     {
         [SlashCommand("ping", "Pings the bot")]
-        public async Task Ping() => await RespondAsync("pong");
+        public async Task Ping() => await RespondAsync($"pong ({Context.Client.Latency} ms)");
     }
 }
