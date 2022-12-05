@@ -31,7 +31,9 @@ namespace DiscordBot.Modules
         }
 
         [SlashCommand("8ball", "Receive an answer to a yes/no question")]
-        public async Task Magic8BallResponse(string question= "", bool ephemeral = false)
+        public async Task Magic8BallResponse(
+            [Summary(description: "Question")] string question= "",
+            [Summary(description: "Display the response only to you")] bool ephemeral = false)
         {
             var httpResponse = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + @"magic8ball/random/weighted");
             var magic8BallResponse = JsonConvert.DeserializeObject<Magic8BallResponseData>(await httpResponse.Content.ReadAsStringAsync());
