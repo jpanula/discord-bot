@@ -27,13 +27,19 @@ namespace DiscordBot
 
         private Program()
         {
-            _configuration = new ConfigurationBuilder().AddUserSecrets<Program>().Build();
+            _configuration = new ConfigurationBuilder()
+                .AddJsonFile("./appsettings.json", true)
+                .AddUserSecrets<Program>()
+                .Build();
+
+
             _services = new ServiceCollection()
                 .AddSingleton(_configuration)
                 .AddSingleton(_socketConfig)
                 .AddSingleton<DiscordSocketClient>()
                 .AddSingleton(x => new InteractionService(x.GetRequiredService<DiscordSocketClient>(), _interactionConfig))
                 .AddSingleton<InteractionHandlingService>()
+                .AddSingleton<HttpClient>()
                 .BuildServiceProvider();
         }
 
