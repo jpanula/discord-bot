@@ -36,5 +36,10 @@ namespace BackendAPI.Services
         {
             return _repository.Get();
         }
+
+        public Magic8BallResponse GetRandomWeighted()
+        {
+            return _repository.GetRandomWeighted();
+        }
     }
 }

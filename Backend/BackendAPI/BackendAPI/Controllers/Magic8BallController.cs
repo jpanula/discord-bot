@@ -23,6 +23,12 @@ namespace BackendAPI.Controllers
             return Ok(_service.Get());
         }
 
+        [HttpGet("/random/weighted")]
+        public IActionResult GetRandomWeighted()
+        {
+            return Ok(_service.GetRandomWeighted());
+        }
+
         [HttpPost]
         public IActionResult Post([FromBody] Magic8BallResponseData data)
         {
