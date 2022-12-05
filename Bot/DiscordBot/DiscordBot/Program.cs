@@ -16,7 +16,8 @@ namespace DiscordBot
         private readonly IConfiguration _configuration;
         private readonly IServiceProvider _services;
 
-        private readonly DiscordSocketConfig _socketConfig = new () {
+        private readonly DiscordSocketConfig _socketConfig = new()
+        {
             GatewayIntents = GatewayIntents.GuildMessageReactions
         };
 

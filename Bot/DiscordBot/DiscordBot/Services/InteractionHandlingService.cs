@@ -38,7 +38,14 @@ namespace DiscordBot.Services
 
         public async Task ReadyAsync()
         {
-            await _handler.RegisterCommandsToGuildAsync(Convert.ToUInt64(_configuration["TestGuild"]), true);
+            if (bool.Parse(_configuration["UseGlobalCommands"]))
+            {
+                await _handler.RegisterCommandsGloballyAsync(true);
+            }
+            else
+            {
+                await _handler.RegisterCommandsToGuildAsync(Convert.ToUInt64(_configuration["TestGuild"]), true);
+            }
         }
 
         public async Task HandleInteraction(SocketInteraction interaction)
