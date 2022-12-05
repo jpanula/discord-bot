@@ -31,17 +31,17 @@ namespace DiscordBot.Modules
         }
 
         [SlashCommand("8ball", "Receive an answer to a yes/no question")]
-        public async Task Magic8BallResponse(string question= "")
+        public async Task Magic8BallResponse(string question= "", bool ephemeral = false)
         {
             var httpResponse = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + @"magic8ball/random/weighted");
             var magic8BallResponse = JsonConvert.DeserializeObject<Magic8BallResponseData>(await httpResponse.Content.ReadAsStringAsync());
             if (question == null || question == "")
             {
-                await RespondAsync(magic8BallResponse.Content);
+                await RespondAsync(magic8BallResponse.Content, ephemeral: ephemeral);
             }
             else
             {
-                await RespondAsync($"{this.Context.User.Mention} asked: {question}\nAnswer: {magic8BallResponse.Content}.", allowedMentions: Discord.AllowedMentions.None);
+                await RespondAsync($"{this.Context.User.Mention} asked: {question}\nAnswer: {magic8BallResponse.Content}.", ephemeral: ephemeral, allowedMentions: Discord.AllowedMentions.None);
             }
         }
     }
