@@ -10,6 +10,8 @@ builder.Services.AddDbContext<BotDbContext>(options => options.UseNpgsql(connect
 builder.Services.AddControllers().AddNewtonsoftJson();
 builder.Services.AddScoped<IMagic8BallRepository, Magic8BallRepository>();
 builder.Services.AddScoped<IMagic8BallService, Magic8BallService>();
+builder.Services.AddScoped<IEventRepository, EventRepository>();
+builder.Services.AddScoped<IEventVoteRepository, EventVoteRepository>();
 builder.Services.AddSingleton<Random>();
 
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
