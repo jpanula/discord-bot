@@ -9,6 +9,6 @@ namespace BackendAPI.Models
         [Required]
         public string Emoji { get; set; }
         [Required]
-        public List<string> DiscordUserId { get; set; }
+        public HashSet<string> DiscordUserId { get; set; }
     }
 }

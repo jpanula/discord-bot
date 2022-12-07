@@ -10,6 +10,6 @@ namespace BackendAPI.Models
         public string? Description { get; set; }
         [Required]
         public DateTime Date { get; set; }
-        public ICollection<EventVote> Votes { get; set; }
+        public HashSet<EventVote> Votes { get; set; }
     }
 }
