@@ -1,4 +1,5 @@
 ﻿using BackendAPI.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace BackendAPI.Repositories
 {
@@ -15,7 +16,7 @@ namespace BackendAPI.Repositories
 
         public override Event GetById(int id)
         {
-            return _context.Events.FirstOrDefault(item => item.Id == id);
+            return _context.Events.Include(item => item.Votes).FirstOrDefault(item => item.Id == id);
         }
 
         public override Event GetLatest()
