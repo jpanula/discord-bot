@@ -11,7 +11,7 @@ namespace BackendAPI.Repositories
 
         public override List<Event> Get()
         {
-            return _context.Events.ToList();
+            return _context.Events.Include(item => item.Votes).ToList();
         }
 
         public override Event GetById(int id)
