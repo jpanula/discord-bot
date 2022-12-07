@@ -37,7 +37,7 @@ namespace BackendAPI.Services
             {
                 var newVote = new EventVote();
                 newVote.Emoji = data.Emoji;
-                newVote.DiscordUserIds.Add(data.DiscordUserId);
+                newVote.DiscordUserIds = new List<string> { data.DiscordUserId };
                 newVote.Name = data.Name;
                 _eventVoteRepository.Add(newVote);
 
