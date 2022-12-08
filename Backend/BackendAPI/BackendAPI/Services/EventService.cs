@@ -14,6 +14,11 @@ namespace BackendAPI.Services
             _eventVoteRepository = eventVoteRepository;
         }
 
+        public List<Event> Get()
+        {
+            return _eventRepository.Get();
+        }
+
         public Event Add(EventData data)
         {
             var newEvent = new Event();
@@ -71,9 +76,28 @@ namespace BackendAPI.Services
             return deletedEvent;
         }
 
-        public List<Event> Get()
+        public EventVote DeleteVote(int eventId, EventVoteData data)
         {
-            return _eventRepository.Get();
+            var selectedEvent = _eventRepository.GetById(eventId);
+            var selectedVote = selectedEvent.Votes.FirstOrDefault(item => item.Emoji == data.Emoji);
+            if (selectedVote == null)
+            {
+                return null;
+            }
+            if (!selectedVote.DiscordUserIds.Contains(data.DiscordUserId))
+            {
+                return null;
+            }
+            selectedVote.DiscordUserIds.Remove(data.DiscordUserId);
+            if (selectedVote.DiscordUserIds.Count == 0)
+            {
+                _eventVoteRepository.Delete(selectedVote.Id);
+            }
+            else
+            {
+                _eventVoteRepository.Update(selectedVote.Id, selectedVote);
+            }
+            return selectedVote;
         }
     }
 }

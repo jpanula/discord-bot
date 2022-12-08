@@ -8,5 +8,6 @@ namespace BackendAPI.Services
         public Event Add(EventData data);
         public EventVote AddVote(int eventId, EventVoteData data);
         public Event Delete(int id);
+        public EventVote DeleteVote(int eventId, EventVoteData data);
     }
 }
