@@ -11,6 +11,6 @@ namespace BackendAPI.Models
         [Required]
         public DateTime Date { get; set; }
         public HashSet<EventVote> Votes { get; set; }
-        public List<string> MessageIds { get; set; }
+        public List<string> MessageIds { get; set; } = new List<string>();
     }
 }
