@@ -9,7 +9,5 @@ namespace BackendAPI.Models
         public string? Description { get; set; }
         [Required]
         public DateTime Date { get; set; }
-        [Required]
-        public string MessageId { get; set; }
     }
 }
