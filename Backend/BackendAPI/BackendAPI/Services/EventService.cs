@@ -34,6 +34,7 @@ namespace BackendAPI.Services
             newEvent.Title = data.Title;
             newEvent.Date = data.Date;
             newEvent.Description = data.Description;
+            newEvent.MessageIds = new List<string>();
             _eventRepository.Add(newEvent);
             return _eventRepository.GetLatest();
         }
