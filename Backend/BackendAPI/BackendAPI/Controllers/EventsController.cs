@@ -27,12 +27,22 @@ namespace BackendAPI.Controllers
         [HttpGet("{id}")]
         public IActionResult GetEventById(int id)
         {
-            return Ok(_eventService.GetById(id));
+            var selectedEvent = _eventService.GetById(id);
+            if (selectedEvent == null)
+            {
+                return NotFound();
+            }
+            return Ok(selectedEvent);
         }
 
         [HttpGet("{id}/Votes")]
         public IActionResult GetEventVotes(int id)
         {
+            var selectedEvent = _eventService.GetById(id);
+            if (selectedEvent == null)
+            {
+                return NotFound();
+            }
             return Ok(_eventService.GetVotes(id));
         }
 
