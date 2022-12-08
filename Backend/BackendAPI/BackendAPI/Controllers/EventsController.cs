@@ -19,9 +19,15 @@ namespace BackendAPI.Controllers
         }
 
         [HttpGet]
-        public IActionResult Get()
+        public IActionResult GetEvent()
         {
             return Ok(_eventService.Get());
+        }
+
+        [HttpGet("{id}")]
+        public IActionResult GetEventById(int id)
+        {
+            return Ok(_eventService.GetById(id));
         }
 
         [HttpPost]

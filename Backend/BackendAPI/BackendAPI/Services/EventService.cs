@@ -19,6 +19,11 @@ namespace BackendAPI.Services
             return _eventRepository.Get();
         }
 
+        public Event GetById(int id)
+        {
+            return _eventRepository.GetById(id);
+        }
+
         public Event Add(EventData data)
         {
             var newEvent = new Event();
