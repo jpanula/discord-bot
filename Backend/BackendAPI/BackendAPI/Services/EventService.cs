@@ -67,6 +67,21 @@ namespace BackendAPI.Services
             }
             return existingVote;
         }
+        public Event AddMessageId(int id, string messageId)
+        {
+            var updatedEvent = _eventRepository.GetById(id);
+            if (updatedEvent == null)
+            {
+                return null;
+            }
+            if (updatedEvent.MessageIds.Contains(messageId))
+            {
+                return updatedEvent;
+            }
+            updatedEvent.MessageIds.Add(messageId);
+            _eventRepository.Update(id, updatedEvent);
+            return updatedEvent;
+        }
 
         public Event Delete(int id)
         {

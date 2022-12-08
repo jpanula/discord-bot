@@ -60,6 +60,17 @@ namespace BackendAPI.Controllers
             return Ok(newVote);
         }
 
+        [HttpPost("{id}/Messages")]
+        public IActionResult PostMessageId(int id, string messageId)
+        {
+            Event updatedEvent = _eventService.AddMessageId(id, messageId);
+            if (updatedEvent == null)
+            {
+                return NotFound();
+            }
+            return Ok(updatedEvent);
+        }
+
         [HttpDelete("{id}")]
         public IActionResult DeleteEvent(int id)
         {
