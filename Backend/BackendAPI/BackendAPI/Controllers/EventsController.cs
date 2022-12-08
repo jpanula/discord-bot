@@ -30,6 +30,12 @@ namespace BackendAPI.Controllers
             return Ok(_eventService.GetById(id));
         }
 
+        [HttpGet("{id}/Votes")]
+        public IActionResult GetEventVotes(int id)
+        {
+            return Ok(_eventService.GetVotes(id));
+        }
+
         [HttpPost]
         public IActionResult PostEvent([FromBody] EventData data)
         {
@@ -37,7 +43,7 @@ namespace BackendAPI.Controllers
             return Created(Request.GetEncodedUrl() + "/" + newEvent.Id, newEvent);
         }
 
-        [HttpPost("{id}/Vote")]
+        [HttpPost("{id}/Votes")]
         public IActionResult PostEventVote(int id, [FromBody] EventVoteData data)
         {
             EventVote newVote = _eventService.AddVote(id, data);
@@ -55,7 +61,7 @@ namespace BackendAPI.Controllers
             return Ok(deletedEvent);
         }
 
-        [HttpDelete("{id}/Vote")]
+        [HttpDelete("{id}/Votes")]
         public IActionResult DeleteEventVote(int id, [FromBody] EventVoteData data)
         {
             var deletedEventVote = _eventService.DeleteVote(id, data);

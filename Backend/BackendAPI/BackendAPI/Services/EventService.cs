@@ -24,6 +24,10 @@ namespace BackendAPI.Services
             return _eventRepository.GetById(id);
         }
 
+        public List<EventVote> GetVotes(int id)
+        {
+            return _eventRepository.GetVotes(id);
+        }
         public Event Add(EventData data)
         {
             var newEvent = new Event();

@@ -6,6 +6,7 @@ namespace BackendAPI.Services
     {
         public List<Event> Get();
         public Event GetById(int id);
+        public List<EventVote> GetVotes(int id);
         public Event Add(EventData data);
         public EventVote AddVote(int eventId, EventVoteData data);
         public Event Delete(int id);
