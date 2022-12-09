@@ -46,6 +46,17 @@ namespace BackendAPI.Controllers
             return Ok(_eventService.GetVotes(id));
         }
 
+        [HttpGet("GetFromMessage/{messageId}")]
+        public IActionResult GetEventIdFromMessageId(string messageId)
+        {
+            var selectedEventId = _eventService.GetEventIdFromMessageId(messageId);
+            if (selectedEventId == null)
+            {
+                return NotFound();
+            }
+            return Ok(selectedEventId);
+        }
+
         [HttpPost]
         public IActionResult PostEvent([FromBody] EventData data)
         {
@@ -61,7 +72,7 @@ namespace BackendAPI.Controllers
         }
 
         [HttpPost("{id}/Messages")]
-        public IActionResult PostMessageId(int id, string messageId)
+        public IActionResult PostMessageId(int id, [FromBody] string messageId)
         {
             Event updatedEvent = _eventService.AddMessageId(id, messageId);
             if (updatedEvent == null)
