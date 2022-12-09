@@ -89,7 +89,7 @@ namespace DiscordBot.Modules
             GetEmojiList();
         }
 
-        [SlashCommand("event", "Create an event people can voteData on")]
+        [SlashCommand("event", "Create an event people can vote on")]
         public async Task CreateEvent(
             string title,
             string date,
