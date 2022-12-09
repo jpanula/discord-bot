@@ -1,4 +1,5 @@
 ﻿using Discord;
+using Discord.Commands;
 using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
@@ -8,6 +9,7 @@ using System.Text;
 
 namespace DiscordBot.Modules
 {
+    [Discord.Interactions.Group("event", "Commands for managing events")]
     public class EventModule : InteractionModuleBase<SocketInteractionContext>
     {
         private readonly HttpClient _httpClient;
@@ -86,17 +88,27 @@ namespace DiscordBot.Modules
             _client = client;
             _client.ReactionAdded += HandleAddReaction;
             _client.ReactionRemoved += HandleRemoveReaction;
+            _client.ButtonExecuted += HandleButtonPress;
             GetEmojiList();
         }
 
-        [SlashCommand("event", "Create an event people can vote on")]
+        [SlashCommand("create", "Create an event people can vote on")]
         public async Task CreateEvent(
             string title,
             string date,
             string description = null)
         {
             await DeferAsync();
-            var dateTime = DateTime.Parse(date);
+            DateTime dateTime;
+            try
+            {
+                dateTime = DateTime.Parse(date);
+            }
+            catch (FormatException exception)
+            {
+                await FollowupAsync("Couldn't parse given date");
+                return;
+            }
 
             var eventData = new EventData() { Title = title, Description = description, Date = dateTime.ToUniversalTime() };
             var httpContent = new StringContent(JsonConvert.SerializeObject(eventData), Encoding.UTF8, "application/json");
@@ -110,28 +122,71 @@ namespace DiscordBot.Modules
             }
 
             var newEvent = JsonConvert.DeserializeObject<Event>(await response.Content.ReadAsStringAsync());
-            var embed = EventEmbed(newEvent);
+            var embed = CreateEventEmbed(newEvent);
 
             var message = await FollowupAsync(embed: embed, allowedMentions: Discord.AllowedMentions.None);
             await PostMessageId(newEvent.Id, message.Id.ToString());
         }
 
-        [SlashCommand("getevent", "Get info of a specific event")]
+        [SlashCommand("get", "Fetch specified event")]
         public async Task GetEventCommand(int id)
         {
             await DeferAsync();
             var fetchedEvent = await GetEvent(id);
             if (!fetchedEvent.HasValue)
             {
-                await FollowupAsync("Event not found", ephemeral: true);
+                await FollowupAsync("Event not found");
                 return;
             }
-            var embed = EventEmbed(fetchedEvent.Value);
+            var embed = CreateEventEmbed(fetchedEvent.Value);
             var message = await FollowupAsync(embed: embed, allowedMentions: Discord.AllowedMentions.None);
             await PostMessageId(fetchedEvent.Value.Id, message.Id.ToString());
         }
 
-        private Embed EventEmbed(Event embedEvent)
+        [SlashCommand("list", "Get a list of all existing events")]
+        public async Task GetAllEventsList(bool ephemeral = true)
+        {
+            await DeferAsync(ephemeral: ephemeral);
+            var response = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + "events");
+            if (!response.IsSuccessStatusCode)
+            {
+                await FollowupAsync("No events found");
+                return;
+            }
+
+            List<Event> events = JsonConvert.DeserializeObject<List<Event>>(await response.Content.ReadAsStringAsync());
+            events.Sort((event1, event2) => event1.Date.CompareTo(event2.Date));
+            var builder = new EmbedBuilder().WithTitle("Events");
+            foreach (Event eventItem in events)
+            {
+                builder.AddField($"{eventItem.Title}",
+                    (eventItem.Description != null ? $"> {eventItem.Description}\n" : "") +
+                    $"> <t:{((DateTimeOffset)eventItem.Date).ToUnixTimeSeconds()}:F>\n" +
+                    $"> `id: {eventItem.Id}`\n");
+            }
+            await FollowupAsync(embed: builder.Build(), ephemeral: ephemeral);
+
+        }
+
+        [SlashCommand("delete", "Delete specified event")]
+        public async Task DeleteEventCommand(int id)
+        {
+            await DeferAsync(ephemeral: true);
+            var selectedEvent = await GetEvent(id);
+            if (!selectedEvent.HasValue)
+            {
+                await FollowupAsync("Event not found", ephemeral: true);
+                return;
+            }
+            var embed = CreateEventEmbed(selectedEvent.Value);
+            var components = new ComponentBuilder()
+                .WithButton("Delete", $"event-delete-{selectedEvent.Value.Id}", ButtonStyle.Danger)
+                .WithButton("Cancel", "event-delete-cancel", ButtonStyle.Secondary)
+                .Build();
+            await FollowupAsync("Delete this event?", embed: embed, components: components, ephemeral: true);
+        }
+
+        private Embed CreateEventEmbed(Event embedEvent)
         {
             var builder = new EmbedBuilder()
                 .WithTitle(embedEvent.Title)
@@ -187,7 +242,7 @@ namespace DiscordBot.Modules
             {
                 await PostEventVote(eventId.Value, await CreateEventVoteDataFromReaction(reaction));
                 var updatedEvent = await GetEvent(eventId.Value);
-                
+
                 await UpdateEventMessageEmbed(message, updatedEvent.Value);
             }
         }
@@ -228,7 +283,7 @@ namespace DiscordBot.Modules
             var fetchedMessage = await message.GetOrDownloadAsync();
             await fetchedMessage.ModifyAsync(msg =>
                 {
-                    var newEmbed = EventEmbed(updatedEvent);
+                    var newEmbed = CreateEventEmbed(updatedEvent);
                     msg.Embeds = new Embed[] { newEmbed };
                 });
         }
@@ -273,6 +328,40 @@ namespace DiscordBot.Modules
 
             var voteData = new EventVoteData() { Name = emojiName, Emoji = emojiChar, UserId = reaction.UserId.ToString() };
             return voteData;
+        }
+
+        private async Task DeleteEvent(int id)
+        {
+            var response = await _httpClient.DeleteAsync(_configuration["Database:apiUrl"] + $"events/{id}");
+            if (!response.IsSuccessStatusCode)
+            {
+                await Program.Log(new LogMessage(LogSeverity.Info, "EventModule", "Event not found"));
+                return;
+            }
+        }
+
+        private async Task HandleButtonPress(SocketMessageComponent component)
+        {
+            if (component.Data.CustomId.Contains("event-delete") && !component.HasResponded)
+            {
+                string response;
+                if (!component.Data.CustomId.Contains("event-delete-cancel"))
+                {
+                    int eventId = int.Parse(component.Data.CustomId.Split('-')[2]);
+                    await DeleteEvent(eventId);
+                    response = "Event has been deleted";
+                }
+                else
+                {
+                    response = "Event was not deleted";
+                }
+                await component.UpdateAsync(message =>
+                    {
+                        message.Content= response;
+                        message.Embeds = null;
+                        message.Components = null;
+                    });
+            }
         }
     }
 }
