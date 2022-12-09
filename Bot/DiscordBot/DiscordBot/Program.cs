@@ -18,7 +18,9 @@ namespace DiscordBot
 
         private readonly DiscordSocketConfig _socketConfig = new()
         {
-            GatewayIntents = GatewayIntents.GuildMessageReactions
+            GatewayIntents = GatewayIntents.All,
+            AlwaysDownloadUsers = true,
+            MessageCacheSize = 100
         };
 
         private readonly InteractionServiceConfig _interactionConfig = new()

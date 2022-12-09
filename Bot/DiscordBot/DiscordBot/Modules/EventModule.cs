@@ -3,12 +3,8 @@ using Discord.Interactions;
 using Discord.WebSocket;
 using Microsoft.Extensions.Configuration;
 using Newtonsoft.Json;
-using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
 using System.Text;
-using System.Threading.Tasks;
 
 namespace DiscordBot.Modules
 {
@@ -17,7 +13,7 @@ namespace DiscordBot.Modules
         private readonly HttpClient _httpClient;
         private readonly IConfiguration _configuration;
         private readonly DiscordSocketClient _client;
-        private List<ulong> _eventMessageIds = new List<ulong>();
+        private List<EmojiInfo> _emojiList;
 
         private struct Event
         {
@@ -31,6 +27,8 @@ namespace DiscordBot.Modules
             public DateTime Date;
             [JsonProperty("votes")]
             public List<EventVote> Votes;
+            [JsonProperty("messageIds")]
+            public List<string> MessageIds;
         }
 
         private struct EventData
@@ -65,11 +63,29 @@ namespace DiscordBot.Modules
             public string UserId;
         }
 
+        private struct EmojiInfo
+        {
+            [JsonProperty("slug")]
+            public string Slug;
+            [JsonProperty("character")]
+            public string Character;
+            [JsonProperty("unicodeName")]
+            public string UnicodeName;
+            [JsonProperty("codePoint")]
+            public string CodePoint;
+            [JsonProperty("group")]
+            public string Group;
+            [JsonProperty("subGroup")]
+            public string SubGroup;
+        }
+
         public EventModule(HttpClient httpClient, IConfiguration configuration, DiscordSocketClient client)
         {
             _httpClient = httpClient;
             _configuration = configuration;
             _client = client;
+            _client.ReactionAdded += HandleAddReaction;
+            GetEmojiList();
         }
 
         [SlashCommand("event", "Create an event people can vote on")]
@@ -83,53 +99,139 @@ namespace DiscordBot.Modules
 
             var eventData = new EventData() { Title = title, Description = description, Date = dateTime.ToUniversalTime() };
             var httpContent = new StringContent(JsonConvert.SerializeObject(eventData), Encoding.UTF8, "application/json");
-            var httpResponse = await _httpClient.PostAsync(_configuration["Database:apiUrl"] + "events", httpContent);
-            if (!httpResponse.IsSuccessStatusCode)
+            var response = await _httpClient.PostAsync(_configuration["Database:apiUrl"] + "events", httpContent);
+            if (!response.IsSuccessStatusCode)
             {
-                await Program.Log(new LogMessage(
-                    LogSeverity.Error,
-                    "EventModule",
-                    "Failed to add event to database",
-                    new HttpRequestException("Failed to add event to database", null, httpResponse.StatusCode)));
-                await FollowupAsync("Failed to add event to database", ephemeral: true);
+                await LogHttpRequestException(response, "Failed to add event to database");
+                await FollowupAsync("Failed to create event", ephemeral: true);
                 return;
             }
 
-            var embed = eventEmbed(JsonConvert.DeserializeObject<Event>(await httpResponse.Content.ReadAsStringAsync()));
+            var newEvent = JsonConvert.DeserializeObject<Event>(await response.Content.ReadAsStringAsync());
+
+            var embed = EventEmbed(newEvent);
             var message = await FollowupAsync(embed: embed, allowedMentions: Discord.AllowedMentions.None);
-            _eventMessageIds.Add(message.Id);
+
+            await PostMessageId(newEvent.Id, message.Id.ToString());
         }
 
         [SlashCommand("getevent", "Get info of a specific event")]
-        public async Task GetEvent(int id)
+        public async Task GetEventCommand(int id)
         {
             await DeferAsync();
-            var httpResponse = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + $"events/{id}");
-            if (!httpResponse.IsSuccessStatusCode)
+            var fetchedEvent = await GetEvent(id);
+            if (!fetchedEvent.HasValue)
             {
                 await FollowupAsync("Event not found", ephemeral: true);
                 return;
             }
-            var embed = eventEmbed(JsonConvert.DeserializeObject<Event>(await httpResponse.Content.ReadAsStringAsync()));
+            var embed = EventEmbed(fetchedEvent.Value);
             var message = await FollowupAsync(embed: embed, allowedMentions: Discord.AllowedMentions.None);
-            _eventMessageIds.Add(message.Id);
+            await PostMessageId(fetchedEvent.Value.Id, message.Id.ToString());
         }
 
-        private Embed eventEmbed(Event embedEvent)
+        private Embed EventEmbed(Event embedEvent)
         {
             var builder = new EmbedBuilder()
                 .WithTitle(embedEvent.Title)
                 .WithDescription(embedEvent.Description)
-                .AddField("Date/Time", $"<t:{((DateTimeOffset)embedEvent.Date).ToUnixTimeSeconds()}:F>");
+                .AddField("Date/Time", $"<t:{((DateTimeOffset)embedEvent.Date).ToUnixTimeSeconds()}:F>")
+                .WithFooter(new EmbedFooterBuilder().WithText($"(id: {embedEvent.Id})"));
 
             if (embedEvent.Votes != null)
             {
                 foreach (var vote in embedEvent.Votes)
                 {
-                    builder.AddField($"<:{vote.Name}:{vote.Emoji}>", vote.UserIds.Select(id => _client.GetUser(UInt64.Parse(id)).Mention + "\n"), inline: true);
+                    string usersText = "";
+                    foreach (var id in vote.UserIds)
+                    {
+                        var user = _client.GetUser(UInt64.Parse(id));
+                        if (user != null)
+                        {
+                            usersText += user.Mention + "\n";
+                        }
+                    }
+                    builder.AddField($"{vote.Name} {vote.Emoji} ({vote.UserIds.Count})", usersText, inline: true);
                 }
             }
             return builder.Build();
+        }
+
+        private async Task<Nullable<Event>> GetEvent(int id)
+        {
+            var response = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + $"events/{id}");
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogHttpRequestException(response, "Event not found");
+                return null;
+            }
+            var fetchedEvent = JsonConvert.DeserializeObject<Event>(await response.Content.ReadAsStringAsync());
+            return fetchedEvent;
+        }
+
+        private async Task PostMessageId(int eventId, string messageId)
+        {
+            var response = await _httpClient.PostAsync(_configuration["Database:apiUrl"] + $"events/{eventId}/messages", new StringContent(messageId, Encoding.UTF8, "application/json"));
+
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogHttpRequestException(response, "Failed to add messageId to event in database");
+            }
+        }
+
+        private async Task HandleAddReaction(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
+        {
+
+            var response = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + $"events/getfrommessage/{message.Id}");
+            if (response.IsSuccessStatusCode)
+            {
+                string normalEmoji = _emojiList.FirstOrDefault(emoji => emoji.Character == reaction.Emote.ToString()).UnicodeName;
+                string emojiName = normalEmoji != null ? normalEmoji : reaction.Emote.Name;
+                string emojiChar = reaction.Emote.ToString();
+
+                int fetchedEventId = int.Parse(await response.Content.ReadAsStringAsync());
+                var newReaction = new EventVoteData() {Name = emojiName, Emoji = emojiChar, UserId = reaction.UserId.ToString()};
+                await PostEventVote(fetchedEventId, newReaction);
+                var updatedEvent = await GetEvent(fetchedEventId);
+
+                var fetchedMessage = await message.GetOrDownloadAsync();
+                await fetchedMessage.ModifyAsync(message =>
+                {
+                    var newEmbed = EventEmbed(updatedEvent.Value);
+                    message.Embeds = new Embed[] { newEmbed };
+                });
+
+            }
+        }
+
+        private async Task PostEventVote(int eventId, EventVoteData voteData)
+        {
+            var httpContent = new StringContent(JsonConvert.SerializeObject(voteData), Encoding.UTF8, "application/json");
+            var response = await _httpClient.PostAsync(_configuration["Database:apiUrl"] + $"events/{eventId}/votes", httpContent);
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogHttpRequestException(response, "Failed to post event vote to database");
+            }
+        }
+
+        private async Task GetEmojiList()
+        {
+            var response = await _httpClient.GetAsync($"https://emoji-api.com/emojis?access_key={_configuration["EmojiApiKey"]}");
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogHttpRequestException(response, "Failed to load emoji list");
+                return;
+            }
+            _emojiList = JsonConvert.DeserializeObject<List<EmojiInfo>>(await response.Content.ReadAsStringAsync());
+        }
+
+        private async Task LogHttpRequestException(HttpResponseMessage response, string message)
+        {
+            await Program.Log(new LogMessage(
+                    LogSeverity.Error,
+                    "EventModule",
+                    message,
+                    new HttpRequestException(await response.Content.ReadAsStringAsync(), null, response.StatusCode)));
         }
     }
 }
