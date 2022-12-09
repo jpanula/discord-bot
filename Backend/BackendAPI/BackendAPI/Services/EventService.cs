@@ -28,6 +28,17 @@ namespace BackendAPI.Services
         {
             return _eventRepository.GetVotes(id);
         }
+
+        public int? GetEventIdFromMessageId(string messageId)
+        {
+            var selectedEvent = _eventRepository.GetEventFromMessageId(messageId);
+            if (selectedEvent == null)
+            {
+                return null;
+            }
+            return selectedEvent.Id;
+        }
+
         public Event Add(EventData data)
         {
             var newEvent = new Event();
