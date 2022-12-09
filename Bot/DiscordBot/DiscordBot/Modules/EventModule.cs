@@ -85,10 +85,11 @@ namespace DiscordBot.Modules
             _configuration = configuration;
             _client = client;
             _client.ReactionAdded += HandleAddReaction;
+            _client.ReactionRemoved += HandleRemoveReaction;
             GetEmojiList();
         }
 
-        [SlashCommand("event", "Create an event people can vote on")]
+        [SlashCommand("event", "Create an event people can voteData on")]
         public async Task CreateEvent(
             string title,
             string date,
@@ -99,6 +100,7 @@ namespace DiscordBot.Modules
 
             var eventData = new EventData() { Title = title, Description = description, Date = dateTime.ToUniversalTime() };
             var httpContent = new StringContent(JsonConvert.SerializeObject(eventData), Encoding.UTF8, "application/json");
+
             var response = await _httpClient.PostAsync(_configuration["Database:apiUrl"] + "events", httpContent);
             if (!response.IsSuccessStatusCode)
             {
@@ -108,10 +110,9 @@ namespace DiscordBot.Modules
             }
 
             var newEvent = JsonConvert.DeserializeObject<Event>(await response.Content.ReadAsStringAsync());
-
             var embed = EventEmbed(newEvent);
-            var message = await FollowupAsync(embed: embed, allowedMentions: Discord.AllowedMentions.None);
 
+            var message = await FollowupAsync(embed: embed, allowedMentions: Discord.AllowedMentions.None);
             await PostMessageId(newEvent.Id, message.Id.ToString());
         }
 
@@ -162,7 +163,7 @@ namespace DiscordBot.Modules
             var response = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + $"events/{id}");
             if (!response.IsSuccessStatusCode)
             {
-                await LogHttpRequestException(response, "Event not found");
+                await Program.Log(new LogMessage(LogSeverity.Info, "EventModule", "Event not found"));
                 return null;
             }
             var fetchedEvent = JsonConvert.DeserializeObject<Event>(await response.Content.ReadAsStringAsync());
@@ -181,26 +182,25 @@ namespace DiscordBot.Modules
 
         private async Task HandleAddReaction(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
         {
-
-            var response = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + $"events/getfrommessage/{message.Id}");
-            if (response.IsSuccessStatusCode)
+            var eventId = await GetEventIdFromMessageId(message.Id.ToString());
+            if (eventId.HasValue)
             {
-                string normalEmoji = _emojiList.FirstOrDefault(emoji => emoji.Character == reaction.Emote.ToString()).UnicodeName;
-                string emojiName = normalEmoji != null ? normalEmoji : reaction.Emote.Name;
-                string emojiChar = reaction.Emote.ToString();
+                await PostEventVote(eventId.Value, await CreateEventVoteDataFromReaction(reaction));
+                var updatedEvent = await GetEvent(eventId.Value);
+                
+                await UpdateEventMessageEmbed(message, updatedEvent.Value);
+            }
+        }
 
-                int fetchedEventId = int.Parse(await response.Content.ReadAsStringAsync());
-                var newReaction = new EventVoteData() {Name = emojiName, Emoji = emojiChar, UserId = reaction.UserId.ToString()};
-                await PostEventVote(fetchedEventId, newReaction);
-                var updatedEvent = await GetEvent(fetchedEventId);
+        private async Task HandleRemoveReaction(Cacheable<IUserMessage, ulong> message, Cacheable<IMessageChannel, ulong> channel, SocketReaction reaction)
+        {
+            var eventId = await GetEventIdFromMessageId(message.Id.ToString());
+            if (eventId.HasValue)
+            {
+                await RemoveEventVote(eventId.Value, reaction.Emote.ToString(), reaction.UserId.ToString());
+                var updatedEvent = await GetEvent(eventId.Value);
 
-                var fetchedMessage = await message.GetOrDownloadAsync();
-                await fetchedMessage.ModifyAsync(message =>
-                {
-                    var newEmbed = EventEmbed(updatedEvent.Value);
-                    message.Embeds = new Embed[] { newEmbed };
-                });
-
+                await UpdateEventMessageEmbed(message, updatedEvent.Value);
             }
         }
 
@@ -210,8 +210,27 @@ namespace DiscordBot.Modules
             var response = await _httpClient.PostAsync(_configuration["Database:apiUrl"] + $"events/{eventId}/votes", httpContent);
             if (!response.IsSuccessStatusCode)
             {
-                await LogHttpRequestException(response, "Failed to post event vote to database");
+                await LogHttpRequestException(response, "Failed to post event voteData to database");
             }
+        }
+
+        private async Task RemoveEventVote(int eventId, string emoji, string userId)
+        {
+            var response = await _httpClient.DeleteAsync(_configuration["Database:apiUrl"] + $"events/{eventId}/votes/{emoji}/{userId}");
+            if (!response.IsSuccessStatusCode)
+            {
+                await LogHttpRequestException(response, "Failed to delete event vote in database");
+            }
+        }
+
+        private async Task UpdateEventMessageEmbed(Cacheable<IUserMessage, ulong> message, Event updatedEvent)
+        {
+            var fetchedMessage = await message.GetOrDownloadAsync();
+            await fetchedMessage.ModifyAsync(msg =>
+                {
+                    var newEmbed = EventEmbed(updatedEvent);
+                    msg.Embeds = new Embed[] { newEmbed };
+                });
         }
 
         private async Task GetEmojiList()
@@ -232,6 +251,28 @@ namespace DiscordBot.Modules
                     "EventModule",
                     message,
                     new HttpRequestException(await response.Content.ReadAsStringAsync(), null, response.StatusCode)));
+        }
+
+        private async Task<int?> GetEventIdFromMessageId(string messageId)
+        {
+            var response = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + $"events/getfrommessage/{messageId}");
+            if (!response.IsSuccessStatusCode)
+            {
+                await Program.Log(new LogMessage(LogSeverity.Info, "EventModule", "Event not found"));
+                return null;
+            }
+            int fetchedEventId = int.Parse(await response.Content.ReadAsStringAsync());
+            return fetchedEventId;
+        }
+
+        private async Task<EventVoteData> CreateEventVoteDataFromReaction(SocketReaction reaction)
+        {
+            string normalEmoji = _emojiList.FirstOrDefault(emoji => emoji.Character == reaction.Emote.ToString()).UnicodeName;
+            string emojiName = normalEmoji != null ? normalEmoji : reaction.Emote.Name;
+            string emojiChar = reaction.Emote.ToString();
+
+            var voteData = new EventVoteData() { Name = emojiName, Emoji = emojiChar, UserId = reaction.UserId.ToString() };
+            return voteData;
         }
     }
 }
