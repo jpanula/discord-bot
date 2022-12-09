@@ -28,5 +28,10 @@ namespace BackendAPI.Repositories
         {
             return _context.Events.OrderByDescending(item => item.Id).First();
         }
+
+        public Event GetEventFromMessageId(string messageId)
+        {
+            return _context.Events.Include(_item => _item.Votes).FirstOrDefault(item => item.MessageIds.Contains(messageId));
+        }
     }
 }
