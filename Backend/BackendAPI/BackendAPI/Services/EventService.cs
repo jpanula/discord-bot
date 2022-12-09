@@ -111,19 +111,19 @@ namespace BackendAPI.Services
             return deletedEvent;
         }
 
-        public EventVote DeleteVote(int eventId, EventVoteData data)
+        public EventVote DeleteVote(int eventId, string emoji, string userId)
         {
             var selectedEvent = _eventRepository.GetById(eventId);
-            var selectedVote = selectedEvent.Votes.FirstOrDefault(item => item.Emoji == data.Emoji);
+            var selectedVote = selectedEvent.Votes.FirstOrDefault(item => item.Emoji == emoji);
             if (selectedVote == null)
             {
                 return null;
             }
-            if (!selectedVote.DiscordUserIds.Contains(data.DiscordUserId))
+            if (!selectedVote.DiscordUserIds.Contains(userId))
             {
                 return null;
             }
-            selectedVote.DiscordUserIds.Remove(data.DiscordUserId);
+            selectedVote.DiscordUserIds.Remove(userId);
             if (selectedVote.DiscordUserIds.Count == 0)
             {
                 _eventVoteRepository.Delete(selectedVote.Id);

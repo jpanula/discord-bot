@@ -12,6 +12,6 @@ namespace BackendAPI.Services
         public EventVote AddVote(int eventId, EventVoteData data);
         public Event AddMessageId(int id, string messageId);
         public Event Delete(int id);
-        public EventVote DeleteVote(int eventId, EventVoteData data);
+        public EventVote DeleteVote(int eventId, string emoji, string userId);
     }
 }

@@ -93,10 +93,10 @@ namespace BackendAPI.Controllers
             return Ok(deletedEvent);
         }
 
-        [HttpDelete("{id}/Votes")]
-        public IActionResult DeleteEventVote(int id, [FromBody] EventVoteData data)
+        [HttpDelete("{id}/Votes/{emoji}/{userId}")]
+        public IActionResult DeleteEventVote(int id, string emoji, string userId)
         {
-            var deletedEventVote = _eventService.DeleteVote(id, data);
+            var deletedEventVote = _eventService.DeleteVote(id, emoji, userId);
             if (deletedEventVote == null )
             {
                 return NotFound();
