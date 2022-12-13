@@ -2,7 +2,7 @@
 
 namespace BackendAPI.Models
 {
-    public class CommandParameter
+    public class CommandParameter : IEntity
     {
         public int Id { get; set; }
         [Required]

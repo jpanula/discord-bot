@@ -2,7 +2,7 @@
 
 namespace BackendAPI.Models
 {
-    public class Magic8BallResponse
+    public class Magic8BallResponse : IEntity
     {
         public enum AnswerType
         {

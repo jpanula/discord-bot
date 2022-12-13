@@ -2,7 +2,7 @@
 
 namespace BackendAPI.Models
 {
-    public class EventVote
+    public class EventVote : IEntity
     {
         public int Id { get; set; }
         public string? Name { get; set; }

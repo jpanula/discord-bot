@@ -2,7 +2,7 @@
 
 namespace BackendAPI.Models
 {
-    public class SubCommand
+    public class SubCommand : IEntity
     {
         public int Id { get; set; }
         [Required]
