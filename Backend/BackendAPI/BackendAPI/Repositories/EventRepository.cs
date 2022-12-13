@@ -9,29 +9,19 @@ namespace BackendAPI.Repositories
         {
         }
 
-        public override List<Event> Get()
-        {
-            return _context.Events.Include(item => item.Votes).ToList();
-        }
-
-        public override Event GetById(int id)
-        {
-            return _context.Events.Include(item => item.Votes).FirstOrDefault(item => item.Id == id);
-        }
-
         public List<EventVote> GetVotes(int id)
         {
             return GetById(id).Votes.ToList();
         }
 
-        public override Event GetLatest()
-        {
-            return _context.Events.OrderByDescending(item => item.Id).First();
-        }
-
         public Event GetEventFromMessageId(string messageId)
         {
-            return _context.Events.Include(_item => _item.Votes).FirstOrDefault(item => item.MessageIds.Contains(messageId));
+            return _context.Set<Event>().Include(_item => _item.Votes).FirstOrDefault(item => item.MessageIds.Contains(messageId));
+        }
+
+        public override Event GetById(int id)
+        {
+            return _context.Set<Event>().Include(item => item.Votes).FirstOrDefault(item => item.Id == id);
         }
     }
 }

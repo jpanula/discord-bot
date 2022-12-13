@@ -11,24 +11,9 @@ namespace BackendAPI.Repositories
             _rand = random;
         }
 
-        public override List<Magic8BallResponse> Get()
-        {
-            return _context.Magic8BallResponses.ToList();
-        }
-
-        public override Magic8BallResponse GetById(int id)
-        {
-            return _context.Magic8BallResponses.FirstOrDefault(item => item.Id == id);
-        }
-
-        public override Magic8BallResponse GetLatest()
-        {
-            return _context.Magic8BallResponses.OrderByDescending(item => item.Id).First();
-        }
-
         public List<Magic8BallResponse> GetByType(Magic8BallResponse.AnswerType type)
         {
-            return _context.Magic8BallResponses.Where(response => response.Type == type).ToList();
+            return _context.Set<Magic8BallResponse>().Where(response => response.Type == type).ToList();
         }
 
         public Magic8BallResponse GetRandomByType(Magic8BallResponse.AnswerType type)
