@@ -1,8 +1,9 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿using BackendAPI.Models;
+using Microsoft.EntityFrameworkCore;
 
 namespace BackendAPI.Repositories
 {
-    public abstract class RepoBase<T> : IRepository<T>
+    public abstract class RepoBase<T> : IRepository<T> where T : class, IEntity
     {
         protected readonly BotDbContext _context;
 
@@ -11,9 +12,18 @@ namespace BackendAPI.Repositories
             _context = context;
         }
 
-        public abstract List<T> Get();
-        public abstract T GetById(int id);
-        public abstract T GetLatest();
+        public virtual List<T> Get()
+        {
+            return _context.Set<T>().ToList();
+        }
+        public virtual T GetById(int id)
+        {
+            return _context.Set<T>().FirstOrDefault(item => item.Id == id);
+        }
+        public virtual T GetLatest()
+        {
+            return _context.Set<T>().OrderByDescending(item => item.Id).First();
+        }
 
         public virtual void Add(T item)
         {

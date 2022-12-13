@@ -1,6 +1,8 @@
-﻿namespace BackendAPI.Repositories
+﻿using BackendAPI.Models;
+
+namespace BackendAPI.Repositories
 {
-    public interface IRepository<T>
+    public interface IRepository<T> where T : class, IEntity
     {
         public List<T> Get();
         public T GetById(int id);
