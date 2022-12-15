@@ -51,5 +51,6 @@
     "eslint-plugin-immutable": "^1.0.0",
     "prettier": "2.8.1",
     "prettier-eslint": "^15.0.1"
-  }
+  },
+  "proxy": "https://localhost:5001"
 }
