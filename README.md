@@ -62,3 +62,4 @@ If you set the `ephemeral` parameter to `True` the response will be sent in a me
 - Ability to configure and manage commands from the web front end (e.g. add new magic 8-ball responses)
 - Authentication to the front end with Discord account
 - Adding separation by Discord server to commands that should have it (events, custom magic 8-ball responses)
+- Ability for the bot to remind of events ahead of time
