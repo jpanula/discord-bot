@@ -46,7 +46,7 @@ namespace BackendAPI.Controllers
             return Ok(_eventService.GetVotes(id));
         }
 
-        [HttpGet("GetFromMessage/{messageId}")]
+        [HttpGet("GetIdFromMessage/{messageId}")]
         public IActionResult GetEventIdFromMessageId(string messageId)
         {
             var selectedEventId = _eventService.GetEventIdFromMessageId(messageId);
