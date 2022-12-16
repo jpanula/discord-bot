@@ -14,7 +14,7 @@ The bot uses the [Discord.NET](https://discordnet.dev/) framework, and the backe
 
 To get started, clone or download the project. You will also need to add your database connection string to the `appsettings.json` in `Backend/BackendAPI/BackendAPI`
 using the key `Database:ConnectionString`. You will also need to add your [Discord Bot Token](https://discord.com/developers/docs/getting-started#creating-an-app),
-database API URL and an API key to [Open Emoji API](https://emoji-api.com/) in the `appsettings.json` in `Bot/DiscordBot/DiscordBot` using the keys `BotToken`, `Database:apiUrl`
+database API URL, and an API key to [Open Emoji API](https://emoji-api.com/) in the `appsettings.json` in `Bot/DiscordBot/DiscordBot` using the keys `BotToken`, `Database:apiUrl`
 and `EmojiApiKey`. You can alternatively use the [Secret Manager](https://learn.microsoft.com/en-us/aspnet/core/security/app-secrets?view=aspnetcore-7.0&tabs=windows#secret-manager)
 tool and add these to the secrets in the BackendAPI and DiscordBot projects (**recommended**). 
 
