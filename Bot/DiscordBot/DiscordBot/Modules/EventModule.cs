@@ -310,7 +310,7 @@ namespace DiscordBot.Modules
 
         private async Task<int?> GetEventIdFromMessageId(string messageId)
         {
-            var response = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + $"events/getfrommessage/{messageId}");
+            var response = await _httpClient.GetAsync(_configuration["Database:apiUrl"] + $"events/getidfrommessage/{messageId}");
             if (!response.IsSuccessStatusCode)
             {
                 await Program.Log(new LogMessage(LogSeverity.Info, "EventModule", "Event not found"));
